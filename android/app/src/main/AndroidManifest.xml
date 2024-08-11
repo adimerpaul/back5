@@ -46,8 +46,6 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-<!--  [android.permission.FOREGROUND_SERVICE_LOCATION]
-[android.permission.ACCESS_COARSE_LOCATION, android.permission.ACCESS_FINE_LOCATION]  and the app must be in the eligible state/exemptions to access the foreground only permission-->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

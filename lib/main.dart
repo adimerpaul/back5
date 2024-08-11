@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,7 +51,7 @@ Future<void> initializeService() async {
       onStart: onStart,
 
       // auto start service
-      autoStart: true,
+      autoStart: false,
       isForegroundMode: true,
 
       notificationChannelId: 'my_foreground',
@@ -61,7 +62,7 @@ Future<void> initializeService() async {
     ),
     iosConfiguration: IosConfiguration(
       // auto start service
-      autoStart: true,
+      autoStart: false,
 
       // this will be executed when app is in foreground in separated isolate
       onForeground: onStart,
@@ -80,11 +81,11 @@ Future<bool> onIosBackground(ServiceInstance service) async {
   WidgetsFlutterBinding.ensureInitialized();
   DartPluginRegistrant.ensureInitialized();
 
-  SharedPreferences preferences = await SharedPreferences.getInstance();
-  await preferences.reload();
-  final log = preferences.getStringList('log') ?? <String>[];
-  log.add(DateTime.now().toIso8601String());
-  await preferences.setStringList('log', log);
+  // SharedPreferences preferences = await SharedPreferences.getInstance();
+  // await preferences.reload();
+  // final log = preferences.getStringList('log') ?? <String>[];
+  // log.add(DateTime.now().toIso8601String());
+  // await preferences.setStringList('log', log);
 
   return true;
 }
@@ -97,8 +98,8 @@ void onStart(ServiceInstance service) async {
   // For flutter prior to version 3.0.0
   // We have to register the plugin manually
 
-  SharedPreferences preferences = await SharedPreferences.getInstance();
-  await preferences.setString("hello", "world");
+  // SharedPreferences preferences = await SharedPreferences.getInstance();
+  // await preferences.setString("hello", "world");
 
   /// OPTIONAL when use custom notification
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -119,7 +120,7 @@ void onStart(ServiceInstance service) async {
   });
 
   // bring to foreground
-  Timer.periodic(const Duration(seconds: 1), (timer) async {
+  Timer.periodic(const Duration(seconds: 5), (timer) async {
     if (service is AndroidServiceInstance) {
       if (await service.isForegroundService()) {
         /// OPTIONAL for use custom notification
@@ -178,7 +179,42 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String text = "Stop Service";
+  String text = "Start Service";
+
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissions();
+  }
+
+  Future<void> _requestPermissions() async {
+    // Solicita el permiso para notificaciones
+    while (!(await Permission.notification.isGranted)) {
+      var notificationStatus = await Permission.notification.request();
+
+      if (notificationStatus.isPermanentlyDenied) {
+        // Si el permiso está denegado permanentemente, muestra un mensaje o dirige al usuario a la configuración.
+        print("Permiso de notificaciones denegado permanentemente");
+        openAppSettings();
+        return;
+      }
+    }
+
+    // Solicita el permiso para ubicación
+    while (!(await Permission.location.isGranted)) {
+      var locationStatus = await Permission.location.request();
+
+      if (locationStatus.isPermanentlyDenied) {
+        // Si el permiso está denegado permanentemente, muestra un mensaje o dirige al usuario a la configuración.
+        print("Permiso de ubicación denegado permanentemente");
+        openAppSettings();
+        return;
+      }
+    }
+
+    print("Todos los permisos concedidos");
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -208,33 +244,38 @@ class _MyAppState extends State<MyApp> {
                 );
               },
             ),
-            ElevatedButton(
-              child: const Text("Foreground Mode"),
-              onPressed: () =>
-                  FlutterBackgroundService().invoke("setAsForeground"),
-            ),
-            ElevatedButton(
-              child: const Text("Background Mode"),
-              onPressed: () =>
-                  FlutterBackgroundService().invoke("setAsBackground"),
-            ),
-            ElevatedButton(
-              child: Text(text),
-              onPressed: () async {
-                final service = FlutterBackgroundService();
-                var isRunning = await service.isRunning();
-                isRunning
-                    ? service.invoke("stopService")
-                    : service.startService();
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  child: const Text("Foreground"),
+                  onPressed: () =>
+                      FlutterBackgroundService().invoke("setAsForeground"),
+                ),
+                ElevatedButton(
+                  child: const Text("Background"),
+                  onPressed: () =>
+                      FlutterBackgroundService().invoke("setAsBackground"),
+                ),
+                ElevatedButton(
+                  child: Text(text),
+                  onPressed: () async {
+                    final service = FlutterBackgroundService();
+                    var isRunning = await service.isRunning();
+                    isRunning
+                        ? service.invoke("stopService")
+                        : service.startService();
 
-                setState(() {
-                  text = isRunning ? 'Start Service' : 'Stop Service';
-                });
-              },
+                    setState(() {
+                      text = isRunning ? 'Start Service' : 'Stop Service';
+                    });
+                  },
+                ),
+              ],
             ),
-            const Expanded(
-              child: LogView(),
-            ),
+            // const Expanded(
+            //   child: LogView(),
+            // ),
           ],
         ),
       ),
@@ -242,44 +283,44 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class LogView extends StatefulWidget {
-  const LogView({Key? key}) : super(key: key);
-
-  @override
-  State<LogView> createState() => _LogViewState();
-}
-
-class _LogViewState extends State<LogView> {
-  late final Timer timer;
-  List<String> logs = [];
-
-  @override
-  void initState() {
-    super.initState();
-    timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
-      final SharedPreferences sp = await SharedPreferences.getInstance();
-      await sp.reload();
-      logs = sp.getStringList('log') ?? [];
-      if (mounted) {
-        setState(() {});
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    timer.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: logs.length,
-      itemBuilder: (context, index) {
-        final log = logs.elementAt(index);
-        return Text(log);
-      },
-    );
-  }
-}
+// class LogView extends StatefulWidget {
+//   const LogView({Key? key}) : super(key: key);
+//
+//   @override
+//   State<LogView> createState() => _LogViewState();
+// }
+//
+// class _LogViewState extends State<LogView> {
+//   late final Timer timer;
+//   List<String> logs = [];
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//     timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+//       final SharedPreferences sp = await SharedPreferences.getInstance();
+//       await sp.reload();
+//       logs = sp.getStringList('log') ?? [];
+//       if (mounted) {
+//         setState(() {});
+//       }
+//     });
+//   }
+//
+//   @override
+//   void dispose() {
+//     timer.cancel();
+//     super.dispose();
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return ListView.builder(
+//       itemCount: logs.length,
+//       itemBuilder: (context, index) {
+//         final log = logs.elementAt(index);
+//         return Text(log);
+//       },
+//     );
+//   }
+// }
