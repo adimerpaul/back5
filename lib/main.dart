@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
 
@@ -121,14 +122,26 @@ void onStart(ServiceInstance service) async {
 
   // bring to foreground
   Timer.periodic(const Duration(seconds: 5), (timer) async {
+    String locationMessage = "Ubicación no disponible";
     if (service is AndroidServiceInstance) {
       if (await service.isForegroundService()) {
+
+        // Obtiene la ubicación actual
+        Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+
+        double latitude = position.latitude;
+        double longitude = position.longitude;
+
+        locationMessage = "Lat: $latitude, Lng: $longitude";
+
         /// OPTIONAL for use custom notification
         /// the notification id must be equals with AndroidConfiguration when you call configure() method.
         flutterLocalNotificationsPlugin.show(
           888,
           'COOL SERVICE',
-          'Awesome ${DateTime.now()}',
+          'Ubicación: $locationMessage, ${DateTime.now()}',
           const NotificationDetails(
             android: AndroidNotificationDetails(
               'my_foreground',
@@ -142,13 +155,13 @@ void onStart(ServiceInstance service) async {
         // if you don't using custom notification, uncomment this
         service.setForegroundNotificationInfo(
           title: "My App Service",
-          content: "Updated at ${DateTime.now()}",
+          content: "Ubicación: $locationMessage, Updated at ${DateTime.now()}",
         );
       }
     }
 
     /// you can see this log in logcat
-    print('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
+    print('FLUTTER BACKGROUND SERVICE: ${DateTime.now()} - Ubicación: $locationMessage');
 
     // test using external plugin
     final deviceInfo = DeviceInfoPlugin();
@@ -188,6 +201,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _requestPermissions() async {
+    FlutterBackgroundService().invoke("setAsForeground");
     // Solicita el permiso para notificaciones
     while (!(await Permission.notification.isGranted)) {
       var notificationStatus = await Permission.notification.request();
@@ -224,39 +238,39 @@ class _MyAppState extends State<MyApp> {
         ),
         body: Column(
           children: [
-            StreamBuilder<Map<String, dynamic>?>(
-              stream: FlutterBackgroundService().on('update'),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                final data = snapshot.data!;
-                String? device = data["device"];
-                DateTime? date = DateTime.tryParse(data["current_date"]);
-                return Column(
-                  children: [
-                    Text(device ?? 'Unknown'),
-                    Text(date.toString()),
-                  ],
-                );
-              },
-            ),
+            // StreamBuilder<Map<String, dynamic>?>(
+            //   stream: FlutterBackgroundService().on('update'),
+            //   builder: (context, snapshot) {
+            //     if (!snapshot.hasData) {
+            //       return const Center(
+            //         child: CircularProgressIndicator(),
+            //       );
+            //     }
+            //
+            //     final data = snapshot.data!;
+            //     String? device = data["device"];
+            //     DateTime? date = DateTime.tryParse(data["current_date"]);
+            //     return Column(
+            //       children: [
+            //         Text(device ?? 'Unknown'),
+            //         Text(date.toString()),
+            //       ],
+            //     );
+            //   },
+            // ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ElevatedButton(
-                  child: const Text("Foreground"),
-                  onPressed: () =>
-                      FlutterBackgroundService().invoke("setAsForeground"),
-                ),
-                ElevatedButton(
-                  child: const Text("Background"),
-                  onPressed: () =>
-                      FlutterBackgroundService().invoke("setAsBackground"),
-                ),
+                // ElevatedButton(
+                //   child: const Text("Foreground"),
+                //   onPressed: () =>
+                //       FlutterBackgroundService().invoke("setAsForeground"),
+                // ),
+                // ElevatedButton(
+                //   child: const Text("Background"),
+                //   onPressed: () =>
+                //       FlutterBackgroundService().invoke("setAsBackground"),
+                // ),
                 ElevatedButton(
                   child: Text(text),
                   onPressed: () async {
