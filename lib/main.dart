@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ffi';
+import 'package:back5/pages/LoginPage.dart';
 import 'package:back5/services/Foreground.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -26,10 +27,12 @@ class _MyAppState extends State<MyApp> {
   String text = "Start Service";
   double? lat;
   double? lng;
+  late MapController _mapController;
 
   @override
   void initState() {
     super.initState();
+    _mapController = MapController();
     _requestPermissions();
   }
   _location() async {
@@ -39,6 +42,7 @@ class _MyAppState extends State<MyApp> {
 
     lat = position.latitude;
     lng = position.longitude;
+    _mapController.move(LatLng(lat!, lng!), 15.0);
     setState(() {
       lat = lat;
       lng = lng;
@@ -77,66 +81,68 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: Stack(
-          children: [
-            // Mapa
-            FlutterMap(
-              options: MapOptions(
-                initialCenter: LatLng(lat ?? 0, lng ?? 0),
-                initialZoom: 9.2,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}',
-                  userAgentPackageName: 'com.example.app',
-                  maxNativeZoom: 19,
-                ),
-              ],
-            ),
-            // Botones flotantes
-            Positioned(
-              top: 50.0,
-              left: 10.0,
-              right: 10.0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  FloatingActionButton(
-                    onPressed: () {
-                      // Acción del botón 1
-                    },
-                    child: Icon(Icons.location_on),
-                    heroTag: 'btn1',
-                  ),
-                  FloatingActionButton(
-                    onPressed: () {
-                      // Acción del botón 2
-                    },
-                    child: Icon(Icons.map),
-                    heroTag: 'btn2',
-                  ),
-                  FloatingActionButton(
-                    onPressed: () {
-                      // Acción del botón 3
-                    },
-                    child: Icon(Icons.navigation),
-                    heroTag: 'btn3',
-                  ),
-                  FloatingActionButton(
-                    onPressed: () {
-                      // Acción del botón 4
-                    },
-                    child: Icon(Icons.settings),
-                    heroTag: 'btn4',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    return const MaterialApp(
+      home: LoginPage(),
+      // home: Scaffold(
+      //   body: Stack(
+      //     children: [
+      //       // Mapa
+      //       FlutterMap(
+      //         mapController: _mapController,
+      //         options: MapOptions(
+      //           initialCenter: LatLng(lat ?? 0, lng ?? 0),
+      //           initialZoom: 9.2,
+      //         ),
+      //         children: [
+      //           TileLayer(
+      //             urlTemplate: 'https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}',
+      //             userAgentPackageName: 'com.example.app',
+      //             maxNativeZoom: 19,
+      //           ),
+      //         ],
+      //       ),
+      //       // Botones flotantes
+      //       Positioned(
+      //         top: 50.0,
+      //         left: 10.0,
+      //         right: 10.0,
+      //         child: Row(
+      //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      //           children: [
+      //             FloatingActionButton(
+      //               onPressed: () {
+      //                 // Acción del botón 1
+      //               },
+      //               child: Icon(Icons.location_on),
+      //               heroTag: 'btn1',
+      //             ),
+      //             FloatingActionButton(
+      //               onPressed: () {
+      //                 // Acción del botón 2
+      //               },
+      //               child: Icon(Icons.map),
+      //               heroTag: 'btn2',
+      //             ),
+      //             FloatingActionButton(
+      //               onPressed: () {
+      //                 // Acción del botón 3
+      //               },
+      //               child: Icon(Icons.navigation),
+      //               heroTag: 'btn3',
+      //             ),
+      //             FloatingActionButton(
+      //               onPressed: () {
+      //                 // Acción del botón 4
+      //               },
+      //               child: Icon(Icons.settings),
+      //               heroTag: 'btn4',
+      //             ),
+      //           ],
+      //         ),
+      //       ),
+      //     ],
+      //   ),
+      // ),
     );
   }
 }
