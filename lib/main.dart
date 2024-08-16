@@ -4,6 +4,7 @@ import 'package:back5/pages/LoginPage.dart';
 import 'package:back5/services/Foreground.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -13,6 +14,8 @@ import 'package:url_launcher/url_launcher.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeService();
+  const bool isProduction = bool.fromEnvironment('dart.vm.product');
+  await dotenv.load(fileName: isProduction ? ".env.production" : ".env");
   runApp(const MyApp());
 }
 
@@ -42,7 +45,7 @@ class _MyAppState extends State<MyApp> {
 
     lat = position.latitude;
     lng = position.longitude;
-    _mapController.move(LatLng(lat!, lng!), 15.0);
+    // _mapController.move(LatLng(lat!, lng!), 15.0);
     setState(() {
       lat = lat;
       lng = lng;

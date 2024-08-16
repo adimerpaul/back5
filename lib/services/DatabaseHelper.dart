@@ -1,7 +1,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-class DatabaseHelper{
+class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper.internal();
   static Database? _database;
   factory DatabaseHelper() => _instance;
@@ -23,8 +23,10 @@ class DatabaseHelper{
       CREATE TABLE users (
         id INTEGER PRIMARY KEY,
         user_id TEXT,
-        name TEXT,
-      )
+        name TEXT
+      );
+    ''');
+    await db.execute('''
       CREATE TABLE location (
         id INTEGER PRIMARY KEY,
         fecha TEXT,
@@ -32,11 +34,18 @@ class DatabaseHelper{
         latitud TEXT,
         longitud TEXT,
         migrado BOOLEAN
-      )
+      );
     ''');
   }
+
   Future<int> insertUser(Map<String, dynamic> row) async {
     Database? db = await database;
-    return await db!.insert('users', row);
+    //prefuntar si existe el id 1
+    var res = await db!.query('users', where: 'user_id = ?', whereArgs: ['1']);
+    if (res.isNotEmpty) {
+      return await db.update('users', row, where: 'user_id = ?', whereArgs: ['1']);
+    } else {
+      return await db.insert('users', row);
+    }
   }
 }
