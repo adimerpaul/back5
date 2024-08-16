@@ -16,6 +16,7 @@ class MapaPage extends StatefulWidget {
 
 class _MapaPageState extends State<MapaPage> {
   String text = "Start Service";
+  bool _swGlobal = false;
   double? lat;
   double? lng;
   late MapController _mapController;
@@ -77,10 +78,12 @@ class _MapaPageState extends State<MapaPage> {
             options: MapOptions(
               initialCenter: LatLng(lat ?? 0, lng ?? 0),
               initialZoom: 9.2,
+              maxZoom: 22.0,
+              minZoom: 12.0,
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}',
+                urlTemplate: _swGlobal?'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}':'https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}',
                 userAgentPackageName: 'com.example.app',
                 maxNativeZoom: 19,
                 tileProvider: FMTCStore('mapStore').getTileProvider(),
@@ -97,23 +100,29 @@ class _MapaPageState extends State<MapaPage> {
               children: [
                 FloatingActionButton(
                   onPressed: () {
-                    // Acción del botón 1
+                    setState(() {
+                      _swGlobal = true;
+                    });
                   },
-                  child: Icon(Icons.location_on),
+                  // icono de un planeta
+                  child: Icon(_swGlobal ? Icons.satellite_outlined : Icons.satellite),
                   heroTag: 'btn1',
+                  backgroundColor: _swGlobal ? Colors.white : Colors.grey[300],
                 ),
                 FloatingActionButton(
                   onPressed: () {
                     // Acción del botón 2
+                    setState(() {
+                      _swGlobal = false;
+                    });
                   },
-                  child: Icon(Icons.map),
+                  child: Icon(_swGlobal ? Icons.map : Icons.map_outlined),
                   heroTag: 'btn2',
+                  backgroundColor: _swGlobal ? Colors.grey[300] : Colors.white,
                 ),
                 FloatingActionButton(
-                  onPressed: () {
-                    // Acción del botón 3
-                  },
-                  child: Icon(Icons.navigation),
+                  onPressed: _location,
+                  child: Icon(Icons.location_searching),
                   heroTag: 'btn3',
                 ),
                 FloatingActionButton(
