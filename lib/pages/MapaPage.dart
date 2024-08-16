@@ -16,7 +16,8 @@ class MapaPage extends StatefulWidget {
 
 class _MapaPageState extends State<MapaPage> {
   String text = "Start Service";
-  bool _swGlobal = false;
+  bool _swGlobal = true;
+  bool _loading = false;
   double? lat;
   double? lng;
   late MapController _mapController;
@@ -55,16 +56,20 @@ class _MapaPageState extends State<MapaPage> {
         });
   }
   _location() async {
+    setState(() {
+      _loading = true;
+    });
     Position position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
 
     lat = position.latitude;
     lng = position.longitude;
-    _mapController.move(LatLng(lat!, lng!), 15.0);
+    _mapController.move(LatLng(lat!, lng!), 17.0);
     setState(() {
       lat = lat;
       lng = lng;
+      _loading = false;
     });
   }
   @override
@@ -88,6 +93,18 @@ class _MapaPageState extends State<MapaPage> {
                 maxNativeZoom: 19,
                 tileProvider: FMTCStore('mapStore').getTileProvider(),
               ),
+              MarkerLayer(markers: [
+                Marker(
+                    width: 30.0,
+                    height: 30.0,
+                    point: LatLng(lat ?? 0, lng ?? 0),
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.redAccent, // Color del marcador
+                      size: 30.0,
+                    ),
+                ),
+              ]),
             ],
           ),
           // Botones flotantes
@@ -120,6 +137,9 @@ class _MapaPageState extends State<MapaPage> {
                   heroTag: 'btn2',
                   backgroundColor: _swGlobal ? Colors.grey[300] : Colors.white,
                 ),
+                _loading
+                    ? const CircularProgressIndicator()
+                    :
                 FloatingActionButton(
                   onPressed: _location,
                   child: Icon(Icons.location_searching),
