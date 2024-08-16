@@ -20,6 +20,8 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     verifyUser();
+    _usernameController.text = 'admin';
+    _passwordController.text = 'admin';
     super.initState();
   }
   Future<void> verifyUser() async {
@@ -52,9 +54,7 @@ class _LoginPageState extends State<LoginPage> {
         'user_id': '1',
         'name': _usernameController.text,
       });
-      // delay 3 sec
       await Future.delayed(const Duration(seconds: 1));
-      // print('Usuario insertado');
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const MapaPage())

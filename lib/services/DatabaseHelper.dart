@@ -53,4 +53,8 @@ class DatabaseHelper {
     var res = await db!.query('users', where: 'user_id = ?', whereArgs: ['1']);
     return res.isNotEmpty ? res.first : null;
   }
+  Future<int> deleteUser() async {
+    Database? db = await database;
+    return await db!.delete('users', where: 'user_id = ?', whereArgs: ['1']);
+  }
 }

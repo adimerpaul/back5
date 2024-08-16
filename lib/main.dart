@@ -76,7 +76,7 @@ class _MyAppState extends State<MyApp> {
         openAppSettings();
         return;
       }else{
-        _location();
+        // _location();
       }
     }
     print("Todos los permisos concedidos");
