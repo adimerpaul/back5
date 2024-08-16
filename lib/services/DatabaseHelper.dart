@@ -48,4 +48,9 @@ class DatabaseHelper {
       return await db.insert('users', row);
     }
   }
+  Future<Map<String, dynamic>?> getUser() async {
+    Database? db = await database;
+    var res = await db!.query('users', where: 'user_id = ?', whereArgs: ['1']);
+    return res.isNotEmpty ? res.first : null;
+  }
 }

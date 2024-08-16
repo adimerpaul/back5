@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/DatabaseHelper.dart';
 import '../services/SnackbarHelper.dart';
+import 'MapaPage.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,6 +17,26 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  @override
+  void initState() {
+    verifyUser();
+    super.initState();
+  }
+  Future<void> verifyUser() async {
+    setState(() {
+      _isLoading = true;
+    });
+    final user = await DatabaseHelper().getUser();
+    if (user != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MapaPage())
+      );
+    }
+    setState(() {
+      _isLoading = false;
+    });
+  }
   Future<void> _login() async {
     if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
       showError(context, 'Por favor, complete todos los campos');
@@ -33,7 +54,11 @@ class _LoginPageState extends State<LoginPage> {
       });
       // delay 3 sec
       await Future.delayed(const Duration(seconds: 1));
-      print('Usuario insertado');
+      // print('Usuario insertado');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MapaPage())
+      );
     } catch (e) {
       print('Error al insertar el usuario: $e');
     } finally {
