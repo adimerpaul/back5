@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:back5/services/DatabaseHelper.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -151,6 +152,12 @@ void onStart(ServiceInstance service) async {
         );
       }
     }
+    DatabaseHelper().insertLocation({
+      'fecha': dateFormatSql(DateTime.now()),
+      'latitud': locationMessage,
+      'longitud': locationMessage,
+      'migrado': false,
+    });
 
     /// you can see this log in logcat
     print('FLUTTER BACKGROUND SERVICE: ${dateFormat(DateTime.now())} - Ubicación: $locationMessage');
@@ -175,7 +182,9 @@ void onStart(ServiceInstance service) async {
     // );
   });
 }
-
+dateFormatSql(DateTime date) {
+  return "${date.year}-${date.month}-${date.day} ${date.hour}:${date.minute}:${ date.second}";
+}
 dateFormat(DateTime date) {
   return "${date.year}-${date.month}-${date.day} ${date.hour}:${date.minute}:${ date.second}";
 }

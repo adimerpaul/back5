@@ -30,14 +30,17 @@ class DatabaseHelper {
       CREATE TABLE location (
         id INTEGER PRIMARY KEY,
         fecha TEXT,
-        hora TIME,
         latitud TEXT,
         longitud TEXT,
         migrado BOOLEAN
       );
     ''');
   }
-
+  // insertLocation
+  Future<int> insertLocation(Map<String, dynamic> row) async {
+    Database? db = await database;
+    return await db!.insert('location', row);
+  }
   Future<int> insertUser(Map<String, dynamic> row) async {
     Database? db = await database;
     //prefuntar si existe el id 1

@@ -1,10 +1,13 @@
+import 'dart:convert';
+
 import 'package:back5/services/DatabaseHelper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-
+import 'package:http/http.dart' as http;
 import 'LoginPage.dart';
 
 class MapaPage extends StatefulWidget {
@@ -18,14 +21,51 @@ class _MapaPageState extends State<MapaPage> {
   String text = "Start Service";
   bool _swGlobal = true;
   bool _loading = false;
+  bool _backgroundStatus = false;
   double? lat;
   double? lng;
   late MapController _mapController;
+  List<LatLng> polylinePoints = [];
   @override
   void initState() {
     _mapController = MapController();
     _location();
+    _statusBackGround();
     super.initState();
+  }
+  _statusBackGround() async {
+    final service = FlutterBackgroundService();
+    var isRunning = await service.isRunning();
+    if (isRunning) {
+      _backgroundStatus = true;
+    }else{
+      _backgroundStatus = false;
+    }
+  }
+  _getRoute() async {
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+    double latDestino = -17.956733;
+    double lngDestino = -67.111792;
+    String url = 'https://router.project-osrm.org/route/v1/driving/$lng,$lat;$lngDestino,$latDestino?geometries=geojson';
+    // print(url);
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final List<dynamic> coordinates = data['routes'][0]['geometry']['coordinates'];
+
+      setState(() {
+        polylinePoints = coordinates
+            .map((point) => LatLng(point[1], point[0]))
+            .toList();
+      });
+
+      // Mover la cámara al inicio de la ruta
+      // _mapController.move(LatLng(startLat, startLng), 14.0);
+    } else {
+      print('Error al obtener la ruta: ${response.statusCode}');
+    }
   }
   _logout() {
     showDialog(
@@ -55,6 +95,20 @@ class _MapaPageState extends State<MapaPage> {
           );
         });
   }
+  _backGround() async {
+    final service = FlutterBackgroundService();
+    var isRunning = await service.isRunning();
+    if (isRunning) {
+      service.invoke("stopService");
+      _backgroundStatus = false;
+    }else {
+      service.startService();
+      _backgroundStatus = true;
+    }
+    setState(() {
+      _backgroundStatus = _backgroundStatus;
+    });
+  }
   _location() async {
     setState(() {
       _loading = true;
@@ -71,6 +125,7 @@ class _MapaPageState extends State<MapaPage> {
       lng = lng;
       _loading = false;
     });
+    _getRoute();
   }
   @override
   Widget build(BuildContext context) {
@@ -92,6 +147,15 @@ class _MapaPageState extends State<MapaPage> {
                 userAgentPackageName: 'com.example.app',
                 maxNativeZoom: 19,
                 tileProvider: FMTCStore('mapStore').getTileProvider(),
+              ),
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: polylinePoints,
+                    strokeWidth: 4.0,
+                    color: Colors.blue,
+                  ),
+                ],
               ),
               MarkerLayer(markers: [
                 Marker(
@@ -118,24 +182,20 @@ class _MapaPageState extends State<MapaPage> {
                 FloatingActionButton(
                   onPressed: () {
                     setState(() {
-                      _swGlobal = true;
+                      _swGlobal = !_swGlobal;
                     });
                   },
                   // icono de un planeta
-                  child: Icon(_swGlobal ? Icons.satellite_outlined : Icons.satellite),
+                  child: Icon(_swGlobal ? Icons.satellite_outlined : Icons.map_outlined),
                   heroTag: 'btn1',
-                  backgroundColor: _swGlobal ? Colors.white : Colors.grey[300],
+                  backgroundColor: Colors.white,
                 ),
                 FloatingActionButton(
-                  onPressed: () {
-                    // Acción del botón 2
-                    setState(() {
-                      _swGlobal = false;
-                    });
-                  },
-                  child: Icon(_swGlobal ? Icons.map : Icons.map_outlined),
+                  onPressed: _backGround,
+                  child: Icon(Icons.send),
                   heroTag: 'btn2',
-                  backgroundColor: _swGlobal ? Colors.grey[300] : Colors.white,
+                  backgroundColor: _backgroundStatus? Colors.green : Colors.red,
+                  foregroundColor: Colors.white,
                 ),
                 _loading
                     ? const CircularProgressIndicator()
